@@ -18,7 +18,7 @@ body {
 
 #reader div pre {
   white-space: normal;
-  font: normal 100% serif;
+  font: 20px serif;
 }
 
 /* from smallest and outermost to largest and innermost */
@@ -223,7 +223,7 @@ div.monelem_controls_magnifier_button {
 div.monelem_controls_contents_container {
   background: #E0D3C0;
   border: 1px solid #EED;
-  font: 11pt Georgia, serif;
+  font: 13pt Georgia, serif;
   color: #432;
   text-shadow: 1px 1px #FFF6E0;
 }
