@@ -76,26 +76,22 @@ Monocle.Styles.page = {
   "-moz-user-select": "none",
   "user-select": "none",
   "-webkit-transform": "translate3d(0,0,0)"
-
-  /*
-  "background": "white",
-  "top": "0",
-  "left": "0",
-  "bottom": "0",
-  "right": "0"
-  */
+  // "top": "40px",
+  // "left": "40px",
+  // "bottom": "40px",
+  // "right": "40px"  
 }
 
 Monocle.Styles.sheaf = {
   "position": "absolute",
-  "overflow": "hidden" // Required by MobileSafari to constrain inner iFrame.
+  "overflow": "hidden", // Required by MobileSafari to constrain inner iFrame.
 
-  /*
-  "top": "0",
-  "left": "0",
-  "bottom": "0",
-  "right": "0"
-  */
+  
+  "top": "30px",
+  "left": "60px",
+  "bottom": "30px",
+  "right": "60px"
+  
 }
 
 Monocle.Styles.component = {
