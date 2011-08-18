@@ -87,9 +87,9 @@ Monocle.Styles.sheaf = {
   "overflow": "hidden", // Required by MobileSafari to constrain inner iFrame.
 
   
-  "top": "30px",
+  "top": "50px",
   "left": "60px",
-  "bottom": "30px",
+  "bottom": "50px",
   "right": "60px"
   
 }
