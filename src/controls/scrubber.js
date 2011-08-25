@@ -7,13 +7,12 @@ Monocle.Controls.Scrubber = function (reader) {
   var k = API.constants = API.constructor;
   var p = API.properties = {}
 
-
   function initialize() {
     p.reader = reader;
     p.reader.listen('monocle:turn', updateNeedles);
     updateNeedles();
   }
-
+  
 
   function pixelToPlace(x, cntr) {
     if (!p.componentIds) {
@@ -84,12 +83,26 @@ Monocle.Controls.Scrubber = function (reader) {
           book.properties.components[cmptIndex],
           place.percentageThrough
         );
-        chp = actualPlace.chapterInfo() || chp;
+        chp = actualPlace.chapterInfo() || chp;        
+        var percent_book = actualPlace.percentageOfBook();
       }
 
       if (chp) {
-        bubble.innerHTML = chp.title;
+        bubble.innerHTML = "<p>"+ chp.title + "</p>";       
+      }      
+      
+      page_number = document.getElementById('monelem_controls_scrubber_bubble_page_number');
+      
+      if (page_number) {
+        page_number.innerHTML = (Math.ceil((x / cntr.offsetWidth) * 100)) + " %"; 
+        bubble.appendChild(page_number);  
+      } else {
+        page_number = document.createElement('p');
+        page_number.id = "monelem_controls_scrubber_bubble_page_number";
+        page_number.innerHTML = (Math.ceil((x / cntr.offsetWidth) * 100)) + " %"; 
+        bubble.appendChild(page_number); 
       }
+      
       setX(bubble, x - bubble.offsetWidth / 2);
 
       p.lastX = x;
