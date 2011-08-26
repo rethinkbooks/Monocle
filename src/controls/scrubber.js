@@ -83,8 +83,7 @@ Monocle.Controls.Scrubber = function (reader) {
           book.properties.components[cmptIndex],
           place.percentageThrough
         );
-        chp = actualPlace.chapterInfo() || chp;        
-        var percent_book = actualPlace.percentageOfBook();
+        chp = actualPlace.chapterInfo() || chp;
       }
 
       if (chp) {
