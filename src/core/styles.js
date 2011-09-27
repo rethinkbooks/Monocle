@@ -1,9 +1,7 @@
 Monocle.Styles = {
 
-  // Takes a hash or string of CSS property assignments and applies them
-  // to the element.
-  //
-  applyRules: function (elem, rules) {
+  // Takes a hash and returns a string.
+  rulesToString: function (rules) {
     if (typeof rules != 'string') {
       var parts = [];
       for (var declaration in rules) {
@@ -11,6 +9,15 @@ Monocle.Styles = {
       }
       rules = parts.join(" ");
     }
+    return rules;
+  },
+
+
+  // Takes a hash or string of CSS property assignments and applies them
+  // to the element.
+  //
+  applyRules: function (elem, rules) {
+    rules = Monocle.Styles.rulesToString(rules);
     elem.style.cssText += ';'+rules;
     return elem.style.cssText;
   },
@@ -22,17 +29,15 @@ Monocle.Styles = {
   //
   affix: function (elem, property, value) {
     var target = elem.style ? elem.style : elem;
-    var props = Monocle.Browser.CSSProps.toDOMProps(property);
-    for (var i = 0, ii = props.length; i < ii; ++i) {
-      target[props[i]] = value;
-    }
+    var props = Monocle.Browser.css.toDOMProps(property);
+    while (props.length) { target[props.shift()] = value; }
   },
 
 
   setX: function (elem, x) {
     var s = elem.style;
     if (typeof x == "number") { x += "px"; }
-    if (Monocle.Browser.has.transform3d) {
+    if (Monocle.Browser.env.supportsTransform3d) {
       s.webkitTransform = "translate3d("+x+", 0, 0)";
     } else {
       s.webkitTransform = "translateX("+x+")";
@@ -45,7 +50,7 @@ Monocle.Styles = {
   setY: function (elem, y) {
     var s = elem.style;
     if (typeof y == "number") { y += "px"; }
-    if (Monocle.Browser.has.transform3d) {
+    if (Monocle.Browser.env.supportsTransform3d) {
       s.webkitTransform = "translate3d(0, "+y+", 0)";
     } else {
       s.webkitTransform = "translateY("+y+")";
@@ -75,29 +80,34 @@ Monocle.Styles.page = {
   "-webkit-user-select": "none",
   "-moz-user-select": "none",
   "user-select": "none",
-  "-webkit-transform": "translate3d(0,0,0)"
-  // "top": "40px",
-  // "left": "40px",
-  // "bottom": "40px",
-  // "right": "40px"  
+  "-webkit-transform": "translate3d(0,0,0)",
+  "visibility": "visible"
+
+  /*
+  "background": "white",
+  "top": "0",
+  "left": "0",
+  "bottom": "0",
+  "right": "0"
+  */
 }
 
 Monocle.Styles.sheaf = {
   "position": "absolute",
-  "overflow": "hidden", // Required by MobileSafari to constrain inner iFrame.  
-  "top": "80px",
-  "left": "60px",
-  "bottom": "100px",
-  "right": "60px"
-  
+  "overflow": "hidden"
+
+  /*
+  "top": "0",
+  "left": "0",
+  "bottom": "0",
+  "right": "0"
+  */
 }
 
 Monocle.Styles.component = {
-  "display": "block",
   "width": "100%",
   "height": "100%",
   "border": "none",
-  "overflow": "hidden",
   "-webkit-user-select": "none",
   "-moz-user-select": "none",
   "user-select": "none"
@@ -118,4 +128,4 @@ Monocle.Styles.overlay = {
 
 
 
-Monocle.pieceLoaded('styles');
+Monocle.pieceLoaded('core/styles');

@@ -1,3 +1,5 @@
+Monocle.DEBUG = true;
+
 (function () {
 
   Monocle.Styles.container.right = "24px";
@@ -59,6 +61,10 @@
       var placeSaver = new Monocle.Controls.PlaceSaver(bkTitle);
       readerOptions.place = placeSaver.savedPlace();
       readerOptions.panels = Monocle.Panels.Marginal;
+      readerOptions.stylesheet = "body { " +
+        "color: #210;" +
+        "font-family: Palatino, Georgia, serif;" +
+      "}";
 
       /* Initialize the reader */
       window.reader = Monocle.Reader(
@@ -171,12 +177,6 @@
               pageNumber.update(evt.m.page, evt.m.pageNumber);
             }
           );
-
-          reader.addPageStyles("body { " +
-            "color: #210;" +
-            "font-family: Palatino, Georgia, serif;" +
-            "line-height: 1.2;" +
-          "}");
 
           /* Scrubber */
           var scrubber = new Monocle.Controls.Scrubber(reader);

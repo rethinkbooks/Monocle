@@ -26,11 +26,8 @@ Monocle.Events.dispatch = function (elem, evtType, data, cancelable) {
 // Register a function to be invoked when an event fires.
 //
 Monocle.Events.listen = function (elem, evtType, fn, useCapture) {
-  if (elem.addEventListener) {
-    return elem.addEventListener(evtType, fn, useCapture || false);
-  } else if (elem.attachEvent) {
-    return elem.attachEvent('on'+evtType, fn);
-  }
+  if (typeof elem == "string") { elem = document.getElementById(elem); }
+  return elem.addEventListener(evtType, fn, useCapture || false);
 }
 
 
@@ -119,7 +116,7 @@ Monocle.Events.listenForContact = function (elem, fns, options) {
 
   var capture = (options && options.useCapture) || false;
 
-  if (!Monocle.Browser.has.touch) {
+  if (!Monocle.Browser.env.touch) {
     if (fns.start) {
       listeners.mousedown = function (evt) {
         if (evt.button != 0) { return; }
@@ -179,7 +176,7 @@ Monocle.Events.listenForContact = function (elem, fns, options) {
       }
     }
 
-    if (Monocle.Browser.has.iframeTouchBug) {
+    if (Monocle.Browser.env.brokenIframeTouchModel) {
       Monocle.Events.tMonitor = Monocle.Events.tMonitor ||
         new Monocle.Events.TouchMonitor();
       Monocle.Events.tMonitor.listen(elem, listeners, options);
@@ -199,8 +196,8 @@ Monocle.Events.listenForContact = function (elem, fns, options) {
 //
 Monocle.Events.deafenForContact = function (elem, listeners) {
   var prefix = "";
-  if (Monocle.Browser.has.touch) {
-    prefix = Monocle.Browser.has.iframeTouchBug ? "contact" : "touch";
+  if (Monocle.Browser.env.touch) {
+    prefix = Monocle.Browser.env.brokenIframeTouchModel ? "contact" : "touch";
   }
 
   for (evtType in listeners) {
@@ -249,8 +246,6 @@ Monocle.Events.listenForTap = function (elem, fn, activeClass) {
       evt.m.registrantY < 0 || evt.m.registrantY > elem.offsetHeight
     ) {
       annul();
-    } else {
-      evt.preventDefault();
     }
   }
 
@@ -259,7 +254,6 @@ Monocle.Events.listenForTap = function (elem, fn, activeClass) {
     {
       start: function (evt) {
         startPos = [evt.m.pageX, evt.m.pageY];
-        evt.preventDefault();
         if (activeClass && elem.dom) { elem.dom.addClass(activeClass); }
       },
       move: annulIfOutOfBounds,
@@ -563,7 +557,7 @@ Monocle.Events.TouchMonitor = function () {
 
 
 Monocle.Events.listenOnIframe = function (frame) {
-  if (!Monocle.Browser.has.iframeTouchBug) {
+  if (!Monocle.Browser.env.brokenIframeTouchModel) {
     return;
   }
   Monocle.Events.tMonitor = Monocle.Events.tMonitor ||
@@ -571,4 +565,4 @@ Monocle.Events.listenOnIframe = function (frame) {
   Monocle.Events.tMonitor.listenOnIframe(frame);
 }
 
-Monocle.pieceLoaded('events');
+Monocle.pieceLoaded('core/events');

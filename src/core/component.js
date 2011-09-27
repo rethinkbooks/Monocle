@@ -49,8 +49,11 @@ Monocle.Component = function (book, id, index, chapters, source) {
     return loadFrame(
       pageDiv,
       function () {
-        setupFrame(pageDiv, pageDiv.m.activeFrame);
-        callback(pageDiv, API);
+        setupFrame(
+          pageDiv,
+          pageDiv.m.activeFrame,
+          function () { callback(pageDiv, API) }
+        );
       }
     );
   }
@@ -227,46 +230,40 @@ Monocle.Component = function (book, id, index, chapters, source) {
   // Once a frame is loaded with this component, call this method to style
   // and measure its contents.
   //
-  function setupFrame(pageDiv, frame) {
-    // BROWSERHACK: iOS touch events on iframes are busted. See comments in
+  function setupFrame(pageDiv, frame, callback) {
+    // iOS touch events on iframes are busted. See comments in
     // events.js for an explanation of this hack.
+    //
     Monocle.Events.listenOnIframe(frame);
 
-    // Announce that the component has changed.
-    var evtData = {
-      'page': pageDiv,
-      'document': frame.contentDocument,
-      'component': API
-    };
-    pageDiv.m.reader.dispatchEvent('monocle:componentchange', evtData);
-
-    // Correct the body lineHeight to use a number, not a percentage, which
-    // causes the text to jump upwards.
     var doc = frame.contentDocument;
-    var win = doc.defaultView;
-    var currStyle = win.getComputedStyle(doc.body, null);
-    var lh = parseFloat(currStyle.getPropertyValue('line-height'));
-    var fs = parseFloat(currStyle.getPropertyValue('font-size'));
-    doc.body.style.lineHeight = lh / fs;
+    var evtData = { 'page': pageDiv, 'document': doc, 'component': API };
 
-    p.pageLength = pageDiv.m.dimensions.measure();
-    frame.style.visibility = "visible";
+    // Announce that the component is loaded.
+    pageDiv.m.reader.dispatchEvent('monocle:componentmodify', evtData);
 
-    // Find the place of any chapters in the component.
-    locateChapters(pageDiv);
+    updateDimensions(pageDiv, function () {
+      frame.style.visibility = "visible";
+
+      // Find the place of any chapters in the component.
+      locateChapters(pageDiv);
+
+      // Announce that the component has changed.
+      pageDiv.m.reader.dispatchEvent('monocle:componentchange', evtData);
+
+      callback();
+    });
   }
 
 
   // Checks whether the pageDiv dimensions have changed. If they have,
   // remeasures dimensions and returns true. Otherwise returns false.
   //
-  function updateDimensions(pageDiv) {
-    if (pageDiv.m.dimensions.hasChanged()) {
-      p.pageLength = pageDiv.m.dimensions.measure();
-      return true;
-    } else {
-      return false;
-    }
+  function updateDimensions(pageDiv, callback) {
+    pageDiv.m.dimensions.update(function (pageLength) {
+      p.pageLength = pageLength;
+      if (typeof callback == "function") { callback() };
+    });
   }
 
 
@@ -337,15 +334,28 @@ Monocle.Component = function (book, id, index, chapters, source) {
   function pageForXPath(xpath, pageDiv) {
     var doc = pageDiv.m.activeFrame.contentDocument;
     var percent = 0;
-    if (typeof doc.evaluate == "function") {
-      var node = doc.evaluate(
-        xpath,
-        doc,
-        null,
-        9,
-        null
-      ).singleNodeValue;
-      var percent = pageDiv.m.dimensions.percentageThroughOfNode(node);
+    if (Monocle.Browser.env.supportsXPath) {
+      var node = doc.evaluate(xpath, doc, null, 9, null).singleNodeValue;
+      if (node) {
+        percent = pageDiv.m.dimensions.percentageThroughOfNode(node);
+      }
+    } else {
+      console.warn("XPath not supported in this client.");
+    }
+    return percentToPageNumber(percent);
+  }
+
+
+  function pageForSelector(selector, pageDiv) {
+    var doc = pageDiv.m.activeFrame.contentDocument;
+    var percent = 0;
+    if (Monocle.Browser.env.supportsQuerySelector) {
+      var node = doc.querySelector(selector);
+      if (node) {
+        percent = pageDiv.m.dimensions.percentageThroughOfNode(node);
+      }
+    } else {
+      console.warn("querySelector not supported in this client.");
     }
     return percentToPageNumber(percent);
   }
@@ -368,9 +378,10 @@ Monocle.Component = function (book, id, index, chapters, source) {
   API.chapterForPage = chapterForPage;
   API.pageForChapter = pageForChapter;
   API.pageForXPath = pageForXPath;
+  API.pageForSelector = pageForSelector;
   API.lastPageNumber = lastPageNumber;
 
   return API;
 }
 
-Monocle.pieceLoaded('component');
+Monocle.pieceLoaded('core/component');

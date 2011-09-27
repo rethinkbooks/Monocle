@@ -10,7 +10,10 @@
 
     <!-- MONOCLE CORE -->
     <script type="text/javascript" src="../../src/core/monocle.js"></script>
-    <script type="text/javascript" src="../../src/core/compat.js"></script>
+    <script type="text/javascript" src="../../src/compat/env.js"></script>
+    <script type="text/javascript" src="../../src/compat/css.js"></script>
+    <script type="text/javascript" src="../../src/compat/stubs.js"></script>
+    <script type="text/javascript" src="../../src/compat/browser.js"></script>
     <script type="text/javascript" src="../../src/core/events.js"></script>
     <script type="text/javascript" src="../../src/core/factory.js"></script>
     <script type="text/javascript" src="../../src/core/styles.js"></script>
@@ -24,8 +27,10 @@
     <script type="text/javascript" src="../../src/panels/twopane.js"></script>
     <script type="text/javascript" src="../../src/panels/marginal.js"></script>
     <script type="text/javascript" src="../../src/panels/imode.js"></script>
+    <script type="text/javascript" src="../../src/panels/eink.js"></script>
     <script type="text/javascript" src="../../src/dimensions/columns.js"></script>
     <script type="text/javascript" src="../../src/flippers/slider.js"></script>
+    <script type="text/javascript" src="../../src/flippers/instant.js"></script>
     <script type="text/javascript" src="../../src/dimensions/vert.js"></script>
     <script type="text/javascript" src="../../src/flippers/legacy.js"></script>
 
@@ -52,6 +57,7 @@
     </style>
 
     <script type="text/javascript">
+      Monocle.DEBUG = true;
 
       var bookData = {
         getComponents: function () {
@@ -103,10 +109,17 @@
           );
 
           // I-MODE
-          window.reader2 = Monocle.Reader(
+          window.reader3 = Monocle.Reader(
             'imode',
             bookData,
             { panels: Monocle.Panels.IMode }
+          );
+
+          // EINK
+          window.reader3 = Monocle.Reader(
+            'eInk',
+            bookData,
+            { panels: Monocle.Panels.eInk, flipper: Monocle.Flippers.Instant }
           );
         }
       );
@@ -142,6 +155,17 @@
         so that you can interact with the text underneath.
       </p>
     </div>
+
+    <div class="readerInfo">
+      <h2>eInk</h2>
+      <div class="reader" id="eInk"></div>
+      <p>
+        One panel. Left: backwards, right: forwards. Flashes black briefly
+        between components. You can also use your keyboard: PageUp/PageDown.
+        (Kindle3 maps these key-codes to its page turning buttons.)
+      </p>
+    </div>
+
 
 
 <div id="part1">
