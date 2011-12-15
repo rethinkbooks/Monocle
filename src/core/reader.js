@@ -191,7 +191,7 @@ Monocle.Reader = function (node, bookData, options, onLoadCallback) {
   function clampStylesheets(customStylesheet) {
     var defCSS = k.DEFAULT_STYLE_RULES;
     if (Monocle.Browser.env.floatsIgnoreColumns) {
-      defCSS += "html#RS\\:monocle * { float: none !important; }";
+      defCSS.push("html#RS\\:monocle * { float: none !important; }");
     }
     p.defaultStyles = addPageStyles(defCSS, false);
     if (customStylesheet) {
@@ -203,7 +203,7 @@ Monocle.Reader = function (node, bookData, options, onLoadCallback) {
   // Opens the frame to a particular URL (usually 'about:blank').
   //
   function primeFrames(url, callback) {
-    url = url || "about:blank";
+    url = url || (Monocle.Browser.on.UIWebView ? "blank.html" : "about:blank");
 
     var pageCount = 0;
 
@@ -306,7 +306,7 @@ Monocle.Reader = function (node, bookData, options, onLoadCallback) {
         recalculateDimensions(true);
         dispatchEvent("monocle:resize");
       },
-      k.durations.RESIZE_DELAY
+      k.RESIZE_DELAY
     );
   }
 
@@ -367,6 +367,13 @@ Monocle.Reader = function (node, bookData, options, onLoadCallback) {
     if (!p.initialized) {
       console.warn('Attempt to move place before initialization.');
     }
+    if (!p.book.isValidLocus(locus)) {
+      dispatchEvent(
+        "monocle:notfound",
+        { href: locus ? locus.componentId : "anonymous" }
+      );
+      return false;
+    }
     var fn = callback;
     if (!locus.direction) {
       dispatchEvent('monocle:jumping', { locus: locus });
@@ -376,6 +383,7 @@ Monocle.Reader = function (node, bookData, options, onLoadCallback) {
       }
     }
     p.flipper.moveTo(locus, fn);
+    return true;
   }
 
 
@@ -383,13 +391,7 @@ Monocle.Reader = function (node, bookData, options, onLoadCallback) {
   //
   function skipToChapter(src) {
     var locus = p.book.locusOfChapter(src);
-    if (locus) {
-      moveTo(locus);
-      return true;
-    } else {
-      dispatchEvent("monocle:notfound", { href: src });
-      return false;
-    }
+    return moveTo(locus);
   }
 
 
@@ -746,13 +748,7 @@ Monocle.Reader = function (node, bookData, options, onLoadCallback) {
   return API;
 }
 
-Monocle.Reader.durations = {
-  RESIZE_DELAY: 100
-}
-Monocle.Reader.abortMessage = {
-  CLASSNAME: "monocleAbortMessage",
-  TEXT: "Your browser does not support this technology."
-}
+Monocle.Reader.RESIZE_DELAY = 100;
 Monocle.Reader.DEFAULT_SYSTEM_ID = 'RS:monocle'
 Monocle.Reader.DEFAULT_CLASS_PREFIX = 'monelem_'
 Monocle.Reader.DEFAULT_STYLE_RULES = [
@@ -763,6 +759,9 @@ Monocle.Reader.DEFAULT_STYLE_RULES = [
     "overflow: visible !important;" +
   "}",
   "html#RS\\:monocle body {" +
+    "margin: 0 !important;"+
+    "border: none !important;"+
+    "padding: 0 !important;"+
     "-webkit-text-size-adjust: none;" +
   "}",
   "html#RS\\:monocle body * {" +

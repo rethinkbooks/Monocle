@@ -122,6 +122,12 @@ on GitHub).
 
 ## History
 
+2.3.0 - Smoother transitions and animations in more browsers.
+
+2.2.1 - Slider fixes for better iOS performance.
+
+2.2.0 - Speed, compatibility improvements (esp iOS5, Android, Kindle3).
+
 2.1.0 - Source file reorganisation, Sprockets 2, distributables, wiki.
 
 2.0.0 - Complete rewrite to sandbox content in iframes (the Componentry branch).
