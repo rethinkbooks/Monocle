@@ -753,7 +753,7 @@ Monocle.Reader.DEFAULT_SYSTEM_ID = 'RS:monocle'
 Monocle.Reader.DEFAULT_CLASS_PREFIX = 'monelem_'
 Monocle.Reader.DEFAULT_STYLE_RULES = [
   "html#RS\\:monocle * {" +
-    "-webkit-font-smoothing: subpixel-antialiased;" +
+    "-webkit-font-smoothing: antialiased;" +
     "text-rendering: auto !important;" +
     "word-wrap: break-word !important;" +
     "overflow: visible !important;" +
