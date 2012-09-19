@@ -2,13 +2,17 @@
 
 A silky, tactile browser-based ebook reader.
 
-Invented by [Inventive Labs](http://inventivelabs.com.au). Released under the
+Initial development by Joseph Pearson of Inventive Labs. Released under the
 MIT license.
 
 More information (including demos): http://monocle.inventivelabs.com.au
 
 Contributions welcome - fork the repository on
 [GitHub](http://github.com/joseph/monocle).
+
+MONOCLE NOW HAS A GOOGLE GROUP! If you're new to Monocle and you have questions
+that aren't answered by [the Wiki](https://github.com/joseph/monocle/wiki),
+you can ask them here: https://groups.google.com/forum/#!forum/monocle-js
 
 
 ## Getting Monocle
@@ -81,24 +85,21 @@ read the [Monocle Wiki](https://github.com/joseph/Monocle/wiki).
 
 At this time, Monocle aims for full support of all browsers with a
 W3C-compliant CSS column module implementation. That is Gecko, WebKit and
-Opera at this point. Legacy support is provided for some other browsers,
-including recent versions of Internet Explorer. Please encourage your
-browser-maker to work on implementing these standards in particular:
+Opera at this point. Please encourage your browser-maker to work on
+implementing these standards in particular:
 
 * CSS Multi-Column Layout
 * W3C DOM Level 2 Event Model
 * CSS 2D Transforms (better: 3D Transforms, even better: hardware acceleration)
 
-Monocle has a particular focus on mobile devices. Monocle either supports or
-is trying to support:
+Monocle has a particular focus on mobile devices. Monocle supports:
 
-* iOS 3.1+
-* Android 2.0+
-* Blackberry 6
+* iOS 4.2+
+* Android 2.2+
 * Kindle 3
 
 All these mobile platforms implement columned iframes differently, so support
-may be patchy in places, but we're working on it. Patches that improve or
+may be imperfect in places, but we're working on it. Patches that improve or
 broaden Monocle's browser support are very welcome (but please provide tests).
 
 Inventive Labs would like to thank Ebooq for providing a device to assist with
@@ -116,11 +117,17 @@ Monocle has a small set of big goals:
 We'd also like to provide more implementation showcases in the tests, and
 offer more developer documentation in the wiki. 
 
-If you can help out with any of these things, fork away (or contact 'joseph'
+If you can help out with any of these things, fork away (or create an issue
 on GitHub).
 
 
 ## History
+
+3.0.0 - Magic panel, IE10 support, iOS6 support, better Android support,
+        selection events, billboard feature, Monocle.Formatting to clean up
+        Reader, removing deprecated flippers, Stencil refactor, component
+        weights (for more accurate component percentages), and many bug
+        fixes. See https://github.com/joseph/Monocle/compare/v2.3.1...v3.0.0
 
 2.3.1 - Fix for serious Firefox 12 bug in paginating content.
 
