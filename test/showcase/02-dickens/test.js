@@ -8,7 +8,8 @@ Monocle.DEBUG = true;
     components: [
       'components/1.html',
       'components/2.html',
-      'components/3.html'
+      'components/3.html',
+      'components/toc.html'
     ],
     chapters:[
       {
@@ -51,7 +52,7 @@ Monocle.DEBUG = true;
       var bkTitle = bookData.getMetaData('title');
       var placeSaver = new Monocle.Controls.PlaceSaver(bkTitle);
       readerOptions.place = placeSaver.savedPlace();
-      readerOptions.panels = Monocle.Panels.Marginal;
+      readerOptions.panels = Monocle.Panels.Magic;
       readerOptions.stylesheet = "body { " +
         "color: #210;" +
         "font-family: Palatino, Georgia, serif;" +
@@ -82,6 +83,10 @@ Monocle.DEBUG = true;
           var magnifier = new Monocle.Controls.Magnifier(reader);
           reader.addControl(magnifier, 'page');
 
+          /* The stencil activates internal links */
+          var stencil = new Monocle.Controls.Stencil(reader);
+          reader.addControl(stencil);
+          //stencil.toggleHighlights();
 
           /* BOOK TITLE RUNNING HEAD */
           var bookTitle = {}
@@ -152,7 +157,7 @@ Monocle.DEBUG = true;
               runner.className = "runner";
               cntr.appendChild(runner);
               this.runners.push(runner);
-              this.update(page);
+              this.update(page, page.m.place.pageNumber());
               return cntr;
             },
             update: function (page, pageNumber) {

@@ -17,8 +17,13 @@ you can ask them here: https://groups.google.com/forum/#!forum/monocle-js
 
 ## Getting Monocle
 
-You can download a unified, redistributable version of Monocle 
-[from Github](https://github.com/joseph/Monocle/downloads).
+The wiki has details on how to build Monocle for production use:
+
+    https://github.com/joseph/Monocle/wiki/Building
+
+... and how to run it locally (to explore, to develop against, etc):
+
+    https://github.com/joseph/Monocle/wiki/Running-Monocle-locally
 
 The scripts and stylesheets are separated into:
 
@@ -62,10 +67,21 @@ which it can lazily load the contents of the book as the user requests it.
 
 ## Exploring Monocle
 
-If you want to explore all of Monocle's features, clone this repository and
-open `test/index.html` in your browser. This will guide you through Monocle's
-tests, which incidentally demonstrate all the major features. View source or
-browse the test directory in your text editor for implementation details.
+If you want to explore all of Monocle's features, you'll find numerous tests
+and examples here:
+
+* http://test.monoclejs.com/test
+
+Alternatively, you can clone this repository and [build 
+Monocle](https://github.com/joseph/Monocle/wiki/Building) (or simply 
+extract the [pre-built Monocle](https://github.com/joseph/Monocle/downloads)
+to `dist`). Then open `test/index.html` in your browser. This will guide you 
+through Monocle's tests, which incidentally demonstrate all the major 
+features. View source or browse the test directory in your text editor for 
+implementation details.
+
+For more info: 
+https://github.com/joseph/Monocle/wiki/Running-Monocle-locally
 
 
 ## Connecting Monocle to your book content
@@ -122,6 +138,16 @@ on GitHub).
 
 
 ## History
+
+3.2.0 - A new event management subsystem, called Gala, replacing the old
+        Monocle.Events. Gala unifies touch and mouse event registration
+        a lot better. It also works as a standalone library, if you need that -
+        there are no dependencies on other parts of Monocle.
+
+3.1.0 - Numerous stability fixes, plus improvements for Android and Opera,
+        including minor API changes to flippers and slow-browser detection.
+
+3.0.1 - Bugfixes for component loading, cancelling magic panel contacts.
 
 3.0.0 - Magic panel, IE10 support, iOS6 support, better Android support,
         selection events, billboard feature, Monocle.Formatting to clean up

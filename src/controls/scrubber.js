@@ -41,7 +41,6 @@ Monocle.Controls.Scrubber = function (reader) {
     }
     var place = p.reader.getPlace();
     var x = placeToPixel(place, p.reader.dom.find(k.CLS.container));
-    var needle, i = 0;
     for (var i = 0, needle; needle = p.reader.dom.find(k.CLS.needle, i); ++i) {
       setX(needle, x - needle.offsetWidth / 2);
       p.reader.dom.find(k.CLS.trail, i).style.width = x + "px";
@@ -117,6 +116,7 @@ Monocle.Controls.Scrubber = function (reader) {
     }
 
     var startFn = function (evt) {
+      evt.stopPropagation();
       bubble.style.display = "block";
       moveEvt(evt);
       cntrListeners = Monocle.Events.listenForContact(

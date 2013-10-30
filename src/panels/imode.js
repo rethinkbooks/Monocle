@@ -21,7 +21,7 @@ Monocle.Panels.IMode = function (flipper, evtCallbacks) {
     }
     p.divs = {}
 
-    for (dir in p.panels) {
+    for (var dir in p.panels) {
       p.reader.addControl(p.panels[dir]);
       p.divs[dir] = p.panels[dir].properties.div;
       p.panels[dir].listenTo(evtCallbacks);
@@ -86,9 +86,6 @@ Monocle.Panels.IMode = function (flipper, evtCallbacks) {
     p.reader.showControl(p.toggleIcon);
 
     p.interactive = true;
-    if (flipper.interactiveMode) {
-      flipper.interactiveMode(true);
-    }
   }
 
 
@@ -110,9 +107,6 @@ Monocle.Panels.IMode = function (flipper, evtCallbacks) {
     p.reader.hideControl(p.toggleIcon);
 
     p.interactive = false;
-    if (flipper.interactiveMode) {
-      flipper.interactiveMode(false);
-    }
   }
 
 

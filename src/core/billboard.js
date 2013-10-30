@@ -11,7 +11,7 @@ Monocle.Billboard = function (reader) {
     p.reader.dispatchEvent('monocle:modal:on');
     if (p.cntr) { return console.warn("Modal billboard already showing."); }
 
-    var options = options || {};
+    options = options || {};
     var elem = urlOrElement;
     p.cntr = reader.dom.append('div', k.CLS.cntr);
     if (typeof urlOrElement == 'string') {
@@ -26,7 +26,7 @@ Monocle.Billboard = function (reader) {
       elem.naturalWidth || elem.offsetWidth,
       elem.naturalHeight || elem.offsetHeight
     ];
-    if (options.closeButton != false) {
+    if (options.closeButton !== false) {
       var cBtn = p.cntr.dom.append('div', k.CLS.closeButton);
       Monocle.Events.listenForTap(cBtn, hide);
     }
@@ -45,20 +45,20 @@ Monocle.Billboard = function (reader) {
 
 
   function grow() {
-    Monocle.Styles.transitionFor(p.cntr, 'transform', k.ANIM_MS, 'ease-in');
+    Monocle.Styles.transitionFor(p.cntr, 'transform', k.ANIM_MS, 'ease-in-out');
     Monocle.Styles.affix(p.cntr, 'transform', 'translate(0, 0) scale(1)');
   }
 
 
   function shrink(from) {
     p.from = from || p.from || [0,0];
-    var x = p.from[0]+'px';
-    var y = p.from[1]+'px';
-    Monocle.Styles.affix(
-      p.cntr,
-      'transform',
-      'translate('+x+','+y+') scale(0)'
-    );
+    var translate = 'translate('+p.from[0]+'px, '+p.from[1]+'px)';
+    var scale = 'scale(0)';
+    if (typeof p.from[2] === 'number') {
+      scale = 'scaleX('+(p.from[2] / p.cntr.offsetWidth)+') ';
+      scale += 'scaleY('+(p.from[3] / p.cntr.offsetHeight)+')';
+    }
+    Monocle.Styles.affix(p.cntr, 'transform', translate+' '+scale);
   }
 
 
@@ -84,14 +84,14 @@ Monocle.Billboard = function (reader) {
     var w = (p.inner.scrollWidth - p.inner.offsetWidth);
     var h = (p.inner.scrollHeight - p.inner.offsetHeight);
     if (s[0].match(/^\d+$/)) {
-      l = Math.max(0, parseInt(s[0]) - (p.inner.offsetWidth / 2));
+      l = Math.max(0, parseInt(s[0], 10) - (p.inner.offsetWidth / 2));
     } else if (s[0] == 'center') {
       l = w / 2;
     } else if (s[0] == 'right') {
       l = w;
     }
     if (s[1] && s[1].match(/^\d+$/)) {
-      t = Math.max(0, parseInt(s[1]) - (p.inner.offsetHeight / 2));
+      t = Math.max(0, parseInt(s[1], 10) - (p.inner.offsetHeight / 2));
     } else if (!s[1] || s[1] == 'center') {
       t =  h / 2;
     } else if (s[1] == 'bottom') {

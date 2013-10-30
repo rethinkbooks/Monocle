@@ -34,23 +34,29 @@ Monocle.Place = function () {
   // 0 - start of book. 1.0 - end of book.
   //
   function percentAtTopOfPage() {
-    return p.percent - 1.0 / p.component.lastPageNumber();
+    return p.percent - pageSizePercentage();
   }
 
 
   // How far we are through the component at the "bottom of the page".
-  //
-  // NB: API aliases this to percentageThrough().
   //
   function percentAtBottomOfPage() {
     return p.percent;
   }
 
 
+  function pageSizePercentage() {
+    return 1.0 / p.component.lastPageNumber();
+  }
+
+
   // The page number at a given point (0: start, 1: end) within the component.
   //
   function pageAtPercentageThrough(percent) {
-    return Math.max(Math.round(p.component.lastPageNumber() * percent), 1);
+    var pages = pagesInComponent();
+    if (typeof percent != 'number') { percent = 0; }
+    // We round after 4 decimal places because 25*0.8 = 7.000000000000001.
+    return Math.max(Math.ceil(Math.round(pages * percent * 1000) / 1000), 1);
   }
 
 
@@ -70,7 +76,7 @@ Monocle.Place = function () {
     if (p.chapter) {
       return p.chapter;
     }
-    return p.chapter = p.component.chapterForPage(pageNumber());
+    return p.chapter = p.component.chapterForPage(pageNumber()+1);
   }
 
 
@@ -130,7 +136,7 @@ Monocle.Place = function () {
 
 
   function onFirstPageOfBook() {
-    return p.component.properties.index == 0 && pageNumber() == 1;
+    return p.component.properties.index === 0 && pageNumber() === 1;
   }
 
 
@@ -149,6 +155,7 @@ Monocle.Place = function () {
   API.percentAtTopOfPage = percentAtTopOfPage;
   API.percentAtBottomOfPage = percentAtBottomOfPage;
   API.percentageThrough = percentAtBottomOfPage;
+  API.pageSizePercentage = pageSizePercentage;
   API.pageAtPercentageThrough = pageAtPercentageThrough;
   API.pageNumber = pageNumber;
   API.pagesInComponent = pagesInComponent;

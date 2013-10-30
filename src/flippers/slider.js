@@ -6,7 +6,8 @@ Monocle.Flippers.Slider = function (reader) {
     reader: reader,
     pageCount: 2,
     activeIndex: 1,
-    turnData: {}
+    turnData: {},
+    nextPageReady: true
   }
 
 
@@ -30,10 +31,6 @@ Monocle.Flippers.Slider = function (reader) {
 
 
   function listenForInteraction(panelClass) {
-    // BROWSERHACK: Firstly, prime interactiveMode for buggy iOS WebKit.
-    interactiveMode(true);
-    interactiveMode(false);
-
     if (typeof panelClass != "function") {
       panelClass = k.DEFAULT_PANELS_CLASS;
       if (!panelClass) {
@@ -52,13 +49,6 @@ Monocle.Flippers.Slider = function (reader) {
   }
 
 
-  // A panel can call this with true/false to indicate that the user needs
-  // to be able to select or otherwise interact with text.
-  function interactiveMode(bState) {
-    p.reader.dispatchEvent('monocle:interactive:'+(bState ? 'on' : 'off'));
-  }
-
-
   function getPlace(pageDiv) {
     pageDiv = pageDiv || upperPage();
     return pageDiv.m ? pageDiv.m.place : null;
@@ -66,24 +56,23 @@ Monocle.Flippers.Slider = function (reader) {
 
 
   function moveTo(locus, callback) {
-    var fn = function () {
-      prepareNextPage(function () {
-        if (typeof callback == "function") { callback(); }
-        announceTurn();
-      });
+    var cb = function () {
+      if (typeof callback == "function") { callback(); }
+      announceTurn();
     }
-    setPage(upperPage(), locus, fn);
+    setPage(upperPage(), locus, function () { prepareNextPage(cb) });
   }
 
 
-  function setPage(pageDiv, locus, callback) {
+  function setPage(pageDiv, locus, onLoad, onFail) {
     p.reader.getBook().setOrLoadPageAt(
       pageDiv,
       locus,
       function (locus) {
         pageDiv.m.dimensions.translateToLocus(locus);
-        Monocle.defer(callback);
-      }
+        Monocle.defer(onLoad);
+      },
+      onFail
     );
   }
 
@@ -213,12 +202,17 @@ Monocle.Flippers.Slider = function (reader) {
 
 
   function onGoingForward(x) {
-    lifted(x);
+    if (p.nextPageReady === false) {
+      prepareNextPage(function () { lifted(x); }, resetTurnData);
+    } else {
+      lifted(x);
+    }
   }
 
 
   function onGoingBackward(x) {
     var lp = lowerPage(), up = upperPage();
+    var onFail = function () { slideOut(afterCancellingBackward); }
 
     if (Monocle.Browser.env.offscreenRenderingClipped) {
       // set lower to "the page before upper"
@@ -229,10 +223,9 @@ Monocle.Flippers.Slider = function (reader) {
           // flip lower to upper, ready to slide in from left
           flipPages();
           // move lower off the screen to the left
-          jumpOut(lp, function () {
-            lifted(x);
-          });
-        }
+          jumpOut(lp, function () { lifted(x); });
+        },
+        onFail
       );
     } else {
       jumpOut(lp, function () {
@@ -240,7 +233,8 @@ Monocle.Flippers.Slider = function (reader) {
         setPage(
           lp,
           getPlace(up).getLocus({ direction: k.BACKWARDS }),
-          function () { lifted(x); }
+          function () { lifted(x); },
+          onFail
         );
       });
     }
@@ -249,39 +243,13 @@ Monocle.Flippers.Slider = function (reader) {
 
   function afterGoingForward() {
     var up = upperPage(), lp = lowerPage();
-    if (p.interactive) {
-      // set upper (off screen) to current
-      setPage(
-        up,
-        getPlace().getLocus({ direction: k.FORWARDS }),
-        function () {
-          // move upper back onto screen, then set lower to next and reset turn
-          jumpIn(up, function () { prepareNextPage(announceTurn); });
-        }
-      );
-    } else {
-      flipPages();
-      jumpIn(up, function () { prepareNextPage(announceTurn); });
-    }
+    flipPages();
+    jumpIn(up, function () { prepareNextPage(announceTurn); });
   }
 
 
   function afterGoingBackward() {
-    if (p.interactive) {
-      // set lower page to current
-      setPage(
-        lowerPage(),
-        getPlace().getLocus(),
-        function () {
-          // flip lower to upper
-          flipPages();
-          // set lower to next and reset turn
-          prepareNextPage(announceTurn);
-        }
-      );
-    } else {
-      announceTurn();
-    }
+    announceTurn();
   }
 
 
@@ -296,11 +264,21 @@ Monocle.Flippers.Slider = function (reader) {
   }
 
 
-  function prepareNextPage(callback) {
+  // Prepares the lower page to show the next page after the current page,
+  // and calls onLoad when done.
+  //
+  // Note that if the next page is a new component, and it fails to load,
+  // onFail will be called. If onFail is not supplied, onLoad will be called.
+  //
+  function prepareNextPage(onLoad, onFail) {
     setPage(
       lowerPage(),
       getPlace().getLocus({ direction: k.FORWARDS }),
-      callback
+      onLoad,
+      function () {
+        onFail ? onFail() : onLoad();
+        p.nextPageReady = false;
+      }
     );
   }
 
@@ -319,6 +297,7 @@ Monocle.Flippers.Slider = function (reader) {
 
 
   function announceTurn() {
+    p.nextPageReady = true;
     p.reader.dispatchEvent('monocle:turn');
     resetTurnData();
   }
@@ -342,7 +321,7 @@ Monocle.Flippers.Slider = function (reader) {
     if (!options.duration) {
       duration = 0;
     } else {
-      duration = parseInt(options.duration);
+      duration = parseInt(options.duration, 10);
     }
 
     if (Monocle.Browser.env.supportsTransition) {
@@ -401,7 +380,7 @@ Monocle.Flippers.Slider = function (reader) {
 
 
   function jumpIn(pageDiv, callback) {
-    opts = { duration: (Monocle.Browser.env.stickySlideOut ? 1 : 0) }
+    var opts = { duration: (Monocle.Browser.env.stickySlideOut ? 1 : 0) }
     setX(pageDiv, 0, opts, callback);
   }
 
@@ -476,7 +455,6 @@ Monocle.Flippers.Slider = function (reader) {
 
   // OPTIONAL API - WILL BE INVOKED (WHERE RELEVANT) IF PROVIDED.
   API.visiblePages = visiblePages;
-  API.interactiveMode = interactiveMode;
 
   initialize();
 

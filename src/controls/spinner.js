@@ -5,7 +5,6 @@ Monocle.Controls.Spinner = function (reader) {
   var p = API.properties = {
     reader: reader,
     divs: [],
-    spinCount: 0,
     repeaters: {},
     showForPages: []
   }
@@ -13,12 +12,13 @@ Monocle.Controls.Spinner = function (reader) {
 
   function createControlElements(cntr) {
     var anim = cntr.dom.make('div', 'controls_spinner_anim');
+    anim.dom.append('div', 'controls_spinner_inner');
     p.divs.push(anim);
     return anim;
   }
 
 
-  function registerSpinEvt(startEvtType, stopEvtType) {
+  function registerSpinEvent(startEvtType, stopEvtType) {
     var label = startEvtType;
     p.reader.listen(startEvtType, function (evt) { spin(label, evt) });
     p.reader.listen(stopEvtType, function (evt) { spun(label, evt) });
@@ -28,11 +28,13 @@ Monocle.Controls.Spinner = function (reader) {
   // Registers spin/spun event handlers for certain time-consuming events.
   //
   function listenForUsualDelays() {
-    registerSpinEvt('monocle:componentloading', 'monocle:componentloaded');
-    registerSpinEvt('monocle:componentchanging', 'monocle:componentchange');
-    registerSpinEvt('monocle:resizing', 'monocle:resize');
-    registerSpinEvt('monocle:jumping', 'monocle:jump');
-    registerSpinEvt('monocle:recalculating', 'monocle:recalculated');
+    registerSpinEvent('monocle:componentloading', 'monocle:componentloaded');
+    registerSpinEvent('monocle:componentchanging', 'monocle:componentchange');
+    registerSpinEvent('monocle:resizing', 'monocle:resize');
+    registerSpinEvent('monocle:jumping', 'monocle:jump');
+    registerSpinEvent('monocle:recalculating', 'monocle:recalculated');
+    p.reader.listen('monocle:notfound', forceSpun);
+    p.reader.listen('monocle:componentfailed', forceSpun);
   }
 
 
@@ -40,7 +42,6 @@ Monocle.Controls.Spinner = function (reader) {
   //
   function spin(label, evt) {
     label = label || k.GENERIC_LABEL;
-    //console.log('Spinning on ' + (evt ? evt.type : label));
     p.repeaters[label] = true;
     p.reader.showControl(API);
 
@@ -48,13 +49,16 @@ Monocle.Controls.Spinner = function (reader) {
     // don't show the animation. p.global ensures that if an event affects
     // all pages, the animation is always shown, even if other events in this
     // spin cycle are page-specific.
-    var page = evt && evt.m && evt.m.page ? evt.m.page : null;
-    if (!page) { p.global = true; }
+    var page = (evt && evt.m && evt.m.page) ? evt.m.page : null;
+    if (page && p.divs.length > 1) {
+      p.showForPages[page.m.pageIndex] = true;
+    } else {
+      p.global = true;
+      p.reader.dispatchEvent('monocle:modal:on');
+    }
     for (var i = 0; i < p.divs.length; ++i) {
-      var owner = p.divs[i].parentNode.parentNode;
-      if (page == owner) { p.showForPages.push(page); }
-      var show = p.global || p.showForPages.indexOf(page) >= 0;
-      p.divs[i].style.display = show ? 'block' : 'none';
+      var show = (p.global || p.showForPages[i]) ? true : false;
+      p.divs[i].dom[show ? 'removeClass' : 'addClass']('dormant');
     }
   }
 
@@ -63,21 +67,31 @@ Monocle.Controls.Spinner = function (reader) {
   //
   function spun(label, evt) {
     label = label || k.GENERIC_LABEL;
-    //console.log('Spun on ' + (evt ? evt.type : label));
     p.repeaters[label] = false;
     for (var l in p.repeaters) {
       if (p.repeaters[l]) { return; }
     }
+    forceSpun();
+  }
+
+
+  function forceSpun() {
+    if (p.global) { p.reader.dispatchEvent('monocle:modal:off'); }
     p.global = false;
+    p.repeaters = {};
     p.showForPages = [];
-    p.reader.hideControl(API);
+    for (var i = 0; i < p.divs.length; ++i) {
+      p.divs[i].dom.addClass('dormant');
+    }
   }
 
 
   API.createControlElements = createControlElements;
+  API.registerSpinEvent = registerSpinEvent;
   API.listenForUsualDelays = listenForUsualDelays;
   API.spin = spin;
   API.spun = spun;
+  API.forceSpun = forceSpun;
 
   return API;
 }

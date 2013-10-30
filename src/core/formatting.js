@@ -49,12 +49,12 @@ Monocle.Formatting = function (reader, optStyles, optScale) {
   /* PAGE STYLESHEETS */
 
   // API for adding a new stylesheet to all components. styleRules should be
-  // a string of CSS rules. restorePlace defaults to true.
+  // a string of CSS rules.
   //
   // Returns a sheet index value that can be used with updatePageStyles
   // and removePageStyles.
   //
-  function addPageStyles(styleRules, restorePlace) {
+  function addPageStyles(styleRules) {
     return changingStylesheet(function () {
       p.stylesheets.push(styleRules);
       var sheetIndex = p.stylesheets.length - 1;
@@ -64,14 +64,14 @@ Monocle.Formatting = function (reader, optStyles, optScale) {
         addPageStylesheet(cmpt.contentDocument, sheetIndex);
       }
       return sheetIndex;
-    }, restorePlace);
+    });
   }
 
 
   // API for updating the styleRules in an existing page stylesheet across
   // all components. Takes a sheet index value obtained via addPageStyles.
   //
-  function updatePageStyles(sheetIndex, styleRules, restorePlace) {
+  function updatePageStyles(sheetIndex, styleRules) {
     return changingStylesheet(function () {
       p.stylesheets[sheetIndex] = styleRules;
       if (typeof styleRules.join == "function") {
@@ -95,14 +95,14 @@ Monocle.Formatting = function (reader, optStyles, optScale) {
           );
         }
       }
-    }, restorePlace);
+    });
   }
 
 
   // API for removing a page stylesheet from all components. Takes a sheet
   // index value obtained via addPageStyles.
   //
-  function removePageStyles(sheetIndex, restorePlace) {
+  function removePageStyles(sheetIndex) {
     return changingStylesheet(function () {
       p.stylesheets[sheetIndex] = null;
       var i = 0, cmpt = null;
@@ -111,7 +111,7 @@ Monocle.Formatting = function (reader, optStyles, optScale) {
         var styleTag = doc.getElementById('monStylesheet'+sheetIndex);
         styleTag.parentNode.removeChild(styleTag);
       }
-    }, restorePlace);
+    });
   }
 
 
@@ -119,18 +119,10 @@ Monocle.Formatting = function (reader, optStyles, optScale) {
   // brace of custom events (stylesheetchanging/stylesheetchange), and
   // recalculates component dimensions if specified (default to true).
   //
-  function changingStylesheet(callback, restorePlace) {
-    restorePlace = (restorePlace === false) ? false : true;
-    if (restorePlace) {
-      dispatchChanging();
-    }
+  function changingStylesheet(callback) {
+    dispatchChanging();
     var result = callback();
-    if (restorePlace) {
-      p.reader.recalculateDimensions(true);
-      Monocle.defer(dispatchChange);
-    } else {
-      p.reader.recalculateDimensions(false);
-    }
+    p.reader.recalculateDimensions(true, dispatchChange);
     return result;
   }
 
@@ -186,78 +178,92 @@ Monocle.Formatting = function (reader, optStyles, optScale) {
 
   /* FONT SCALING */
 
-  function setFontScale(scale, restorePlace) {
+  function setFontScale(scale) {
     p.fontScale = scale;
-    if (restorePlace) {
-      dispatchChanging();
-    }
+    dispatchChanging();
     var i = 0, cmpt = null;
     while (cmpt = p.reader.dom.find('component', i++)) {
       adjustFontScaleForDoc(cmpt.contentDocument, scale);
     }
-    if (restorePlace) {
-      p.reader.recalculateDimensions(true);
-      dispatchChange();
-    } else {
-      p.reader.recalculateDimensions(false);
-    }
+    p.reader.recalculateDimensions(true, dispatchChange);
   }
 
 
   function adjustFontScaleForDoc(doc, scale) {
-    var elems = doc.getElementsByTagName('*');
     if (scale) {
-      scale = parseFloat(scale);
-      if (!doc.pfsSwept) {
-        sweepElements(doc, elems);
+      if (!doc.body.pfsSwept) {
+        sweepElements(doc);
       }
+      var evtData = { document: doc, scale: parseFloat(scale) };
+      p.reader.dispatchEvent('monocle:fontscaling', evtData);
+      scale = evtData.scale;
 
       // Iterate over each element, applying scale to the original
       // font-size. If a proportional font sizing is already applied to
       // the element, update existing cssText, otherwise append new cssText.
-      //
-      for (var j = 0, jj = elems.length; j < jj; ++j) {
-        var newFs = fsProperty(elems[j].pfsOriginal, scale);
-        if (elems[j].pfsApplied) {
-          replaceFontSizeInStyle(elems[j], newFs);
+      walkTree(doc.body, function (elem) {
+        if (typeof elem.pfsOriginal == 'undefined') { return; }
+        var newFs = fsProperty(Math.round(elem.pfsOriginal*scale));
+        if (elem.pfsApplied) {
+          replaceFontSizeInStyle(elem, newFs);
         } else {
-          elems[j].style.cssText += newFs;
+          elem.style.cssText += newFs;
         }
-        elems[j].pfsApplied = scale;
-      }
-    } else if (doc.pfsSwept) {
+        elem.pfsApplied = scale;
+      });
+
+      p.reader.dispatchEvent('monocle:fontscale', evtData);
+    } else if (doc.body.pfsApplied) {
+      var evtData = { document: doc, scale: null };
+      p.reader.dispatchEvent('monocle:fontscaling', evtData);
+
       // Iterate over each element, removing proportional font-sizing flag
       // and property from cssText.
-      for (var j = 0, jj = elems.length; j < jj; ++j) {
-        if (elems[j].pfsApplied) {
-          var oprop = elems[j].pfsOriginalProp;
+      walkTree(doc.body, function (elem) {
+        if (typeof elem.pfsOriginal == 'undefined') { return; }
+        if (elem.pfsApplied) {
+          var oprop = elem.pfsOriginalProp;
           var opropDec = oprop ? 'font-size: '+oprop+' ! important;' : '';
-          replaceFontSizeInStyle(elems[j], opropDec);
-          elems[j].pfsApplied = null;
+          replaceFontSizeInStyle(elem, opropDec);
+          elem.pfsApplied = null;
         }
-      }
+      });
 
       // Establish new baselines in case classes have changed.
-      sweepElements(doc, elems);
+      sweepElements(doc);
+
+      p.reader.dispatchEvent('monocle:fontscale', evtData);
     }
   }
 
 
-  function sweepElements(doc, elems) {
+  function sweepElements(doc) {
     // Iterate over each element, looking at its font size and storing
     // the original value against the element.
-    for (var i = 0, ii = elems.length; i < ii; ++i) {
-      var currStyle = doc.defaultView.getComputedStyle(elems[i], null);
+    walkTree(doc.body, function (elem) {
+      if (elem.getCTM) { return; } // Ignore SVG elements
+      var currStyle = doc.defaultView.getComputedStyle(elem, null);
       var fs = parseFloat(currStyle.getPropertyValue('font-size'));
-      elems[i].pfsOriginal = fs;
-      elems[i].pfsOriginalProp = elems[i].style.fontSize;
-    }
-    doc.pfsSwept = true;
+      elem.pfsOriginal = fs;
+      elem.pfsOriginalProp = elem.style.fontSize;
+    });
+    doc.body.pfsSwept = true;
   }
 
 
-  function fsProperty(orig, scale) {
-    return 'font-size: '+(orig*scale)+'px ! important;';
+  function walkTree(node, fn) {
+    if (node.nodeType != 1) { return; }
+    fn(node);
+    node = node.firstChild;
+    while (node) {
+      walkTree(node, fn);
+      node = node.nextSibling;
+    }
+  }
+
+
+  function fsProperty(fsInPixels) {
+    return 'font-size: '+fsInPixels+'px ! important;';
   }
 
 
@@ -293,12 +299,19 @@ Monocle.Formatting.DEFAULT_STYLE_RULES = [
     "width: 100% !important;" +
     "position: absolute !important;" +
     "-webkit-text-size-adjust: none;" +
+    "-ms-touch-action: none;" +
+    "-ms-content-zooming: none;" +
+    "-ms-content-zoom-chaining: chained;" +
+    "-ms-content-zoom-limit-min: 100%;" +
+    "-ms-content-zoom-limit-max: 100%;" +
+    "-ms-touch-select: none;" +
   "}",
   "html#RS\\:monocle body * {" +
     "max-width: 100% !important;" +
   "}",
-  "html#RS\\:monocle img, html#RS\\:monocle video, html#RS\\:monocle object {" +
+  "html#RS\\:monocle img, html#RS\\:monocle video, html#RS\\:monocle object, html#RS\\:monocle svg {" +
     "max-height: 95% !important;" +
     "height: auto !important;" +
-  "}"
+  "}",
+  "a:not([href]) { color: inherit; }"
 ]

@@ -192,7 +192,8 @@ Monocle.Controls.Stencil = function (reader, behaviorClasses) {
   // Is this area presently on the screen?
   //
   function rectVisible(rect, l, r) {
-    return rect.left >= l && rect.left < r;
+    var mid = rect.left + (rect.width * 0.5);
+    return mid >= l && mid < r;
   }
 
 
@@ -209,7 +210,7 @@ Monocle.Controls.Stencil = function (reader, behaviorClasses) {
   // Positions the stencil container over the active frame.
   //
   function alignToComponent(pageDiv) {
-    cmpt = pageDiv.m.activeFrame.parentNode;
+    var cmpt = pageDiv.m.activeFrame.parentNode;
     p.container.dom.setStyles({
       left: cmpt.offsetLeft+"px",
       top: cmpt.offsetTop+"px"
@@ -310,16 +311,32 @@ Monocle.Controls.Stencil.Links = function (stencil) {
   //
   API.fitMask = function (link, mask) {
     var hrefObject = deconstructHref(link);
-    if (hrefObject.internal) {
-      mask.setAttribute('href', 'javascript:"Skip to chapter"');
-      Monocle.Events.listen(mask, 'click', function (evt) {
-        stencil.properties.reader.skipToChapter(hrefObject.internal);
-        evt.preventDefault();
-      });
+    var rdr = stencil.properties.reader;
+    var evtData = { href: hrefObject, link: link, mask: mask }
+
+    if (hrefObject.pass) {
+      mask.onclick = function (evt) { return link.click(); }
     } else {
-      mask.setAttribute('href', hrefObject.external);
-      mask.setAttribute('target', '_blank');
-      link.setAttribute('target', '_blank'); // For good measure.
+      link.onclick = function (evt) {
+        evt.preventDefault();
+        return false;
+      }
+      if (hrefObject.internal) {
+        mask.setAttribute('href', 'javascript:"Skip to chapter"');
+        mask.onclick = function (evt) {
+          if (rdr.dispatchEvent('monocle:link:internal', evtData, true)) {
+            rdr.skipToChapter(hrefObject.internal);
+          }
+          evt.preventDefault();
+          return false;
+        }
+      } else {
+        mask.setAttribute('href', hrefObject.external);
+        mask.setAttribute('target', '_blank');
+        mask.onclick = function (evt) {
+          return rdr.dispatchEvent('monocle:link:external', evtData, true);
+        }
+      }
     }
   }
 
@@ -341,20 +358,50 @@ Monocle.Controls.Stencil.Links = function (stencil) {
   // 'http://example.com/monocles/foo.html').
   //
   function deconstructHref(elem) {
-    var url = elem.href;
-    if (!elem.getAttribute('target')) {
-      var m = url.match(/([^#]*)(#.*)?$/);
-      var path = m[1];
-      var anchor = m[2] || '';
-      var cmpts = stencil.properties.reader.getBook().properties.componentIds;
-      for (var i = 0, ii = cmpts.length; i < ii; ++i) {
-        if (path.substr(0 - cmpts[i].length) == cmpts[i]) {
-          return { internal: cmpts[i] + anchor };
-        }
+    var loc = document.location;
+    var origin = loc.protocol+'//'+loc.host;
+    var href = elem.href;
+    var path = href.substring(origin.length);
+    var ext = { external: href };
+
+    if (href.toLowerCase().match(/^javascript:/)) {
+      return { pass: true };
+    }
+
+    // Anchor tags with 'target' attributes are always external URLs.
+    if (elem.getAttribute('target')) {
+      return ext;
+    }
+    // URLs with a different protocol or domain are always external.
+    //console.log("Domain test: %s <=> %s", origin, href);
+    if (href.indexOf(origin) !== 0) {
+      return ext;
+    }
+
+    // If it is in a sub-path of the current path, it's internal.
+    var topPath = loc.pathname.replace(/[^\/]*\.[^\/]+$/,'');
+    if (topPath[topPath.length - 1] != '/') {
+      topPath += '/';
+    }
+    //console.log("Sub-path test: %s <=> %s", topPath, path);
+    if (path.indexOf(topPath) === 0) {
+      return { internal: path.substring(topPath.length) }
+    }
+
+    // If it's a root-relative URL and it's in our list of component ids,
+    // it's internal.
+    var cmptIds = stencil.properties.reader.getBook().properties.componentIds;
+    for (var i = 0, ii = cmptIds.length; i < ii; ++i) {
+      //console.log("Component test: %s <=> %s", cmptIds[i], path);
+      if (path.indexOf(cmptIds[i]) === 0) {
+        return { internal: path }
       }
     }
-    return { external: url };
+
+    // Otherwise it's external.
+    return ext;
   }
+
 
   return API;
 }

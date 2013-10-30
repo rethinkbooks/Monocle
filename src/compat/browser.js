@@ -12,11 +12,15 @@ Monocle.Browser.uaMatch = function (test) {
 // Detect the browser engine and set boolean flags for reference.
 //
 Monocle.Browser.is = {
-  IE: !!(window.attachEvent && !Monocle.Browser.uaMatch('Opera')),
+  IE: !!(
+    (window.attachEvent && !Monocle.Browser.uaMatch('Opera')) ||
+    // IE 11
+    (window.navigator.appName == 'Netscape' && Monocle.Browser.uaMatch('Trident'))
+  ),
   Opera: Monocle.Browser.uaMatch('Opera'),
   WebKit: Monocle.Browser.uaMatch(/Apple\s?WebKit/),
   Gecko: Monocle.Browser.uaMatch('Gecko') && !Monocle.Browser.uaMatch('KHTML'),
-  MobileSafari: Monocle.Browser.uaMatch(/AppleWebKit.*Mobile/)
+  MobileSafari: Monocle.Browser.uaMatch(/OS \d_.*AppleWebKit.*Mobile/)
 }
 
 
@@ -49,6 +53,7 @@ Monocle.Browser.on = {
   BlackBerry: Monocle.Browser.uaMatch('BlackBerry'),
   Android: (
     Monocle.Browser.uaMatch('Android') ||
+    Monocle.Browser.uaMatch('Silk') ||
     Monocle.Browser.uaMatch(/Linux;.*EBRD/) // Sony Readers
   ),
   MacOSX: (
@@ -82,10 +87,18 @@ Monocle.Browser.iOSVersionBelow = function (strOrNum) {
 //
 // FIXME: These tests are too opinionated. Replace with more targeted tests.
 //
-Monocle.Browser.renders = {
-  eInk: Monocle.Browser.on.Kindle3,
-  slow: Monocle.Browser.on.Android || Monocle.Browser.on.Blackberry
-}
+Monocle.Browser.renders = (function () {
+  var ua = navigator.userAgent;
+  var caps = {};
+  caps.eInk = Monocle.Browser.on.Kindle3;
+  caps.slow = (
+    caps.eInk ||
+    (Monocle.Browser.on.Android && !ua.match(/Chrome/)) ||
+    Monocle.Browser.on.Blackberry ||
+    ua.match(/NintendoBrowser/)
+  );
+  return caps;
+})();
 
 
 // A helper class for sniffing CSS features and creating CSS rules

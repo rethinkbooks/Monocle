@@ -99,20 +99,18 @@ Monocle.Component = function (book, id, index, chapters, source) {
   function loadFrameFromHTML(src, frame, callback) {
     var fn = function () {
       Monocle.Events.deafen(frame, 'load', fn);
+      frame.whenDocumentReady();
       Monocle.defer(callback);
     }
     Monocle.Events.listen(frame, 'load', fn);
-
-    // Load the component into the iframe using document.write().
-    frame.contentDocument.open('text/html', 'replace');
-    frame.contentDocument.write(src);
-    frame.contentDocument.close();
-    frame.whenDocumentReady();
-
-    // ALTERNATIVE: load the component into the iframe with a JS URL.
-    // frame.contentWindow['monCmptData'] = src;
-    // src = "javascript:window['monCmptData'];"
-    // frame.src = src;
+    if (Monocle.Browser.env.loadHTMLWithDocWrite) {
+      frame.contentDocument.open('text/html', 'replace');
+      frame.contentDocument.write(src);
+      frame.contentDocument.close();
+    } else {
+      frame.contentWindow['monCmptData'] = src;
+      frame.src = "javascript:window['monCmptData'];"
+    }
   }
 
 
@@ -186,6 +184,13 @@ Monocle.Component = function (book, id, index, chapters, source) {
       // Find the place of any chapters in the component.
       locateChapters(pageDiv);
 
+      // Nothing can prevent iframe scrolling on Android, so we have to undo it.
+      if (Monocle.Browser.on.Android) {
+        Monocle.Events.listen(frame.contentWindow, 'scroll', function () {
+          frame.contentWindow.scrollTo(0,0);
+        });
+      }
+
       // Announce that the component has changed.
       var doc = frame.contentDocument;
       var evtData = { 'page': pageDiv, 'document': doc, 'component': API };
@@ -202,7 +207,7 @@ Monocle.Component = function (book, id, index, chapters, source) {
   function updateDimensions(pageDiv, callback) {
     pageDiv.m.dimensions.update(function (pageLength) {
       p.pageLength = pageLength;
-      if (typeof callback == "function") { callback() };
+      if (typeof callback == "function") { callback() }
     });
   }
 
@@ -351,11 +356,12 @@ Monocle.Component = function (book, id, index, chapters, source) {
       p.source = { html: srcs.join('') };
     }
 
+    var baseURI;
     if (p.source.html && !p.source.html.match(new RegExp("<base\s.+>", "im"))) {
-      var baseURI = computeBaseURI(reader);
+      baseURI = computeBaseURI(reader);
       if (baseURI) {
         p.source.html = p.source.html.replace(
-          new RegExp("(<head(\s[^>]*>)|>)", "im"),
+          new RegExp("(<head[^>]*>)", "im"),
           '$1<base href="'+baseURI+'" />'
         );
       }
@@ -363,7 +369,7 @@ Monocle.Component = function (book, id, index, chapters, source) {
 
     if (p.source.doc && !p.source.doc.querySelector('base')) {
       var srcHead = p.source.doc.querySelector('head') || p.source.doc.body;
-      var baseURI = computeBaseURI(reader);
+      baseURI = computeBaseURI(reader);
       if (srcHead && baseURI) {
         var srcBase = p.source.doc.createElement('base');
         srcBase.setAttribute('href', baseURI);
@@ -384,7 +390,7 @@ Monocle.Component = function (book, id, index, chapters, source) {
   function absoluteURL(url) {
     var link = document.createElement('a');
     link.setAttribute('href', url);
-    result = link.href;
+    var result = link.href;
     delete(link);
     return result;
   }

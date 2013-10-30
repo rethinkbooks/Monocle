@@ -18,7 +18,7 @@ if (typeof window.console == "undefined") {
 window.console.compatDir = function (obj) {
   var stringify = function (o) {
     var parts = [];
-    for (x in o) {
+    for (var x in o) {
       parts.push(x + ": " + o[x]);
     }
     return parts.join(";\n");
@@ -44,7 +44,7 @@ window.console.deprecation = function (msg) {
 // A convenient alias for setTimeout that assumes 0 if no timeout is specified.
 //
 Monocle.defer = function (fn, time) {
-  if (fn && typeof fn == "function") {
+  if (typeof fn == "function") {
     return setTimeout(fn, time || 0);
   }
 }

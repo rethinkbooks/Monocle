@@ -44,124 +44,32 @@
 
       var bookData = {
         getComponents: function () {
-          return [
-            'part1',
-            'part2'
-          ];
+          return ['part1', 'part2'];
         },
         getContents: function () {
-          return [
-            {
-              title: "I",
-              src: 'part1'
-            },
-            {
-              title: "II",
-              src: 'part2'
-            }
-          ]
+          return [{ title: "I", src: 'part1' }, { title: "II", src: 'part2' }];
         },
         getComponent: function (cmptId) {
           return { nodes: [document.getElementById(cmptId).cloneNode(true)] };
         },
         getMetaData: function(key) {
-          return {
-            title: "Lorem Ipsum",
-            creator: "Mr Monocle"
-          }[key];
+          return { title: "Lorem Ipsum", creator: "Mr Monocle" }[key];
         }
       }
 
 
-      function createBookTitle(reader, contactListeners) {
-        var bt = {}
-        bt.createControlElements = function () {
-          cntr = document.createElement('div');
-          cntr.className = "bookTitle";
-          runner = document.createElement('div');
-          runner.className = "runner";
-          runner.innerHTML = reader.getBook().getMetaData('title');
-          cntr.appendChild(runner);
-          if (contactListeners) {
-            Monocle.Events.listenForContact(cntr, contactListeners);
-          }
-          return cntr;
-        }
-        reader.addControl(bt, 'page');
-        return bt;
+      function onWindowLoad() {
+        Monocle.Reader('rdr', bookData, {}, onReaderLoad);
       }
 
-      // Initialize the reader element.
-      Monocle.Events.listen(
-        window,
-        'load',
-        function () {
-          var readerOptions = {
-            panels: Monocle.Panels.Magic
-          };
 
-          // PLACESAVER
-          var placeSaver = new Monocle.Controls.PlaceSaver('placesaver');
-          Monocle.Reader(
-            'placesaver',
-            bookData,
-            { panels: Monocle.Panels.Marginal, place: placeSaver.savedPlace() },
-            function (rdr) {
-              window.reader1 = rdr;
-              rdr.addControl(placeSaver, 'invisible');
-            }
-          );
+      function onReaderLoad(rdr) {
+        var scrCtrl = new Monocle.Controls.Scrubber(rdr);
+        rdr.addControl(scrCtrl, 'standard', { container: 'scrubber' });
+      }
 
-          // MAGNIFIER
-          Monocle.Reader('magnifier', bookData, readerOptions, function (rdr) {
-            window.reader2 = rdr;
-            var magnifier = new Monocle.Controls.Magnifier(rdr);
-            rdr.addControl(magnifier);
-          });
 
-          // SCRUBBER
-          Monocle.Reader('scrubber', bookData, readerOptions, function (rdr) {
-            window.reader3 = rdr;
-            var scrubber = new Monocle.Controls.Scrubber(rdr);
-            rdr.addControl(scrubber);
-          });
-
-          // SPINNER
-          Monocle.Reader('spinner', bookData, readerOptions, function (rdr) {
-            window.reader4 = rdr;
-            var spinner = Monocle.Controls.Spinner(rdr);
-            rdr.addControl(spinner, 'page', { hidden: true });
-            bookTitle = createBookTitle(
-              rdr,
-              {
-                start: function () {
-                  if (spinner.spinning) {
-                    spinner.spun();
-                    spinner.spinning = false;
-                  } else {
-                    spinner.spin();
-                    spinner.spinning = true;
-                  }
-                }
-              }
-            );
-          });
-
-          Monocle.Reader('toc', bookData, readerOptions, function (rdr) {
-            window.reader5 = rdr;
-            var toc = Monocle.Controls.Contents(rdr);
-            rdr.addControl(toc, 'popover', { hidden: true });
-            createBookTitle(
-              rdr,
-              {
-                start: function () {
-                  rdr.showControl(toc);
-                }
-              }
-            );
-          });
-        }
-      );
+      Monocle.Events.listen(window, 'load', onWindowLoad);
     </script>
 
   </head>
@@ -170,43 +78,13 @@
     <a href="../index.html" class="backToGuide">&larr; Back to Guide</a>
 
     <div class="readerInfo">
-      <h2>PlaceSaver</h2>
-      <div class="reader" id="placesaver"></div>
+      <h2>External reader control</h2>
+      <div class="reader" id="rdr"></div>
+      <div id="scrubber"></div>
       <p>
-        Turn to a page, then Shift-Refresh. Should be at same page.
-      </p>
-    </div>
-
-    <div class="readerInfo">
-      <h2>Font Magnifier</h2>
-      <div class="reader" id="magnifier"></div>
-      <p>
-        Click the AA icon in the top right corner to toggle large/normal fonts.
-      </p>
-    </div>
-
-    <div class="readerInfo">
-      <h2>Scrubber</h2>
-      <div class="reader" id="scrubber"></div>
-      <p>
-        Drag along the circle at the base of page to change location.
-      </p>
-    </div>
-
-    <div class="readerInfo">
-      <h2>Spinner</h2>
-      <div class="reader" id="spinner"></div>
-      <p>
-        Click the book title to invoke a page-embedded spinner.
-      </p>
-    </div>
-
-    <div class="readerInfo">
-      <h2>Table of Contents</h2>
-      <div class="reader" id="toc"></div>
-      <p>
-        Click the book title to invoke modal window.
-        Click outside modal window to dismiss.
+        An example of a control that sits outside the reader's DOM tree.
+        The scrubber for this reader should appear at the bottom of
+        the page.
       </p>
     </div>
 

@@ -53,7 +53,9 @@ Monocle.Env = function () {
     Monocle.defer(removeTestFrame);
 
     if (typeof surveyCallback == "function") {
-      surveyCallback(API);
+      var fn = surveyCallback;
+      surveyCallback = null;
+      fn(API);
     }
   }
 
@@ -235,7 +237,8 @@ Monocle.Env = function () {
           'MozPerspective',
           'OPerspective',
           'msPerspective'
-        ])
+        ]) &&
+        !Monocle.Browser.renders.slow // Some older browsers can't be trusted.
       );
     }],
 
@@ -258,17 +261,14 @@ Monocle.Env = function () {
     // CHECK OUT OUR CONTEXT
 
     // Does the device have a MobileSafari-style touch interface?
+    // (Here we can now simply follow the wisdom of Gala.)
     //
-    ["touch", function () {
-      result(
-        ('ontouchstart' in window) ||
-        css.supportsMediaQueryProperty('touch-enabled')
-      );
-    }],
+    ["touch", function () { result(Gala.Pointers.ENV.noMouse); }],
+
 
     // Is the Reader embedded, or in the top-level window?
     //
-    ["embedded", function () { result(top != self) }],
+    ["embedded", function () { result(top != window.self) }],
 
 
     // TEST FOR CERTAIN RENDERING OR INTERACTION BUGS
@@ -288,7 +288,7 @@ Monocle.Env = function () {
     //
     ["floatsIgnoreColumns", function () {
       if (!Monocle.Browser.is.WebKit) { return result(false); }
-      match = navigator.userAgent.match(/AppleWebKit\/([\d\.]+)/);
+      var match = navigator.userAgent.match(/AppleWebKit\/([\d\.]+)/);
       if (!match) { return result(false); }
       return result(match[1] < "534.30");
     }],
@@ -433,8 +433,15 @@ Monocle.Env = function () {
     //
     ['offscreenRenderingClipped', function () {
       result(Monocle.Browser.iOSVersionBelow('6'));
-    }]
+    }],
 
+
+    // Gecko is better at loading content with document.write than with
+    // javascript: URLs. With the latter, it tends to put cruft in history,
+    // and gets confused by <base>.
+    ['loadHTMLWithDocWrite', function () {
+      result(Monocle.Browser.is.Gecko || Monocle.Browser.is.Opera);
+    }]
   ];
 
 
