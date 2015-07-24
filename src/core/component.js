@@ -103,6 +103,7 @@ Monocle.Component = function (book, id, index, chapters, source) {
       Monocle.defer(callback);
     }
     Monocle.Events.listen(frame, 'load', fn);
+    frame.style.position = "relative";
     if (Monocle.Browser.env.loadHTMLWithDocWrite) {
       frame.contentDocument.open('text/html', 'replace');
       frame.contentDocument.write(src);
